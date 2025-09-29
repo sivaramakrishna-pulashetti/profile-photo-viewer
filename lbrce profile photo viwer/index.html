@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LBRCE Students Photos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* 1) New beautiful background: subtle texture with a dark blue base */
+            background-color: #0d1a2f; /* Dark Blue/Navy base */
+            background-image: radial-gradient(circle at center, rgba(46, 73, 107, 0.1) 0%, rgba(13, 26, 47, 0.9) 100%),
+                              repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 100px);
+            color: #e2e8f0; /* Light text for dark background */
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2d3748; /* Darker track */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #63b3ed; /* Blue thumb */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4299e1;
+            cursor: pointer;
+        }
+        /* Style for the main container on dark background */
+        .main-container {
+            background-color: rgba(255, 255, 255, 0.95); /* Slightly transparent white for a clean look on the dark background */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="main-container p-8 rounded-xl shadow-2xl w-full max-w-4xl transform transition-all duration-300 hover:scale-[1.01] mb-8">
+        <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-8 tracking-tight">
+            <span class="bg-clip-text text-transparent bg-gradient-to-r from-green-500 to-teal-500">
+                LBRCE Students Photos
+            </span>
+            <span class="block text-xl font-medium text-gray-500 mt-2">through the LBRCE website</span>
+        </h1>
+
+        <div class="space-y-6 mb-8">
+            <div>
+                <label for="specificRolls" class="block text-base font-semibold text-gray-700 mb-2">
+                    Enter Roll Numbers (comma or newline separated):
+                </label>
+                <textarea id="specificRolls" rows="6"
+                          class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-inner focus:ring-green-500 focus:border-green-500 sm:text-base transition duration-150 ease-in-out placeholder-gray-400"
+                          placeholder="e.g., 24761A05W8, 24761A05W9, 24761A05X0, ..."></textarea>
+                <p class="text-xs text-gray-500 mt-1">
+                    *Enter the complete, exact roll numbers you wish to view.
+                </p>
+            </div>
+
+            <button id="loadImagesBtn"
+                    class="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white py-3 px-6 rounded-lg shadow-lg hover:from-green-600 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 text-lg font-semibold transform transition-all duration-200 hover:scale-[1.02] active:scale-95">
+                Load Photos
+            </button>
+        </div>
+
+        <div id="message" class="text-center text-red-600 text-sm mb-6 font-medium"></div>
+
+        <div id="imagesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full">
+            </div>
+
+        <div id="overallLoadingIndicator" class="hidden fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 rounded-xl">
+            <div class="flex flex-col items-center">
+                <div class="animate-spin rounded-full h-16 w-16 border-4 border-teal-500 border-t-transparent mb-4"></div>
+                <p class="text-gray-700 text-lg font-semibold">Loading images...</p>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="mt-8 text-center w-full max-w-4xl">
+        <p class="text-sm font-light text-gray-400">
+            Designed by <span class="font-medium text-teal-400">CSM students</span>
+        </p>
+    </footer>
+
+
+    <script>
+        const BASE_URL = 'https://erp.lbrce.ac.in/Admissions/Stu_Photo_Sign/P-';
+        const IMAGE_EXTENSION = '.jpg';
+
+        let imageUrls = [];
+
+        const specificRollsInput = document.getElementById('specificRolls'); 
+        const loadImagesBtn = document.getElementById('loadImagesBtn');
+        const messageDiv = document.getElementById('message');
+        const imagesGrid = document.getElementById('imagesGrid');
+        const overallLoadingIndicator = document.getElementById('overallLoadingIndicator');
+
+        /**
+         * Displays a message to the user.
+         */
+        function showMessage(msg, type = 'error') {
+            messageDiv.textContent = msg;
+            messageDiv.className = `text-center text-sm mb-6 font-medium ${type === 'error' ? 'text-red-600' : 'text-green-600'}`;
+        }
+
+        /**
+         * Hides the message.
+         */
+        function hideMessage() {
+            messageDiv.textContent = '';
+            messageDiv.className = '';
+        }
+
+        /**
+         * Shows the overall loading indicator.
+         */
+        function showOverallLoading() {
+            overallLoadingIndicator.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the overall loading indicator.
+         */
+        function hideOverallLoading() {
+            overallLoadingIndicator.classList.add('hidden');
+        }
+
+        /**
+         * Generates an array of image URLs based ONLY on the specific roll number list.
+         */
+        function generateAndDisplayAllImages() {
+            hideMessage();
+            imagesGrid.innerHTML = ''; // Clear previous images
+            imageUrls = []; // Clear previous URLs
+
+            const specificRollsText = specificRollsInput.value.trim();
+
+            if (!specificRollsText) {
+                showMessage('Please enter one or more Roll Numbers in the box above.', 'error');
+                return;
+            }
+
+            // Use specific roll numbers from the textarea
+            const rawRolls = specificRollsText.split(/[\n,]+/) // Split by newline or comma
+                                           .map(roll => roll.trim().toUpperCase())
+                                           .filter(roll => roll !== ''); // Remove empty strings
+            
+            if (rawRolls.length === 0) {
+                showMessage('No valid Roll Numbers were parsed from your input.', 'error');
+                return;
+            }
+
+            imageUrls = rawRolls.map(rollNo => ({
+                rollNo: rollNo,
+                url: `${BASE_URL}${rollNo}${IMAGE_EXTENSION}`
+            }));
+
+
+            if (imageUrls.length === 0) {
+                showMessage('No images generated for the specified input. Please check your input.', 'error');
+                return;
+            }
+
+            showMessage(`Attempting to load ${imageUrls.length} photos.`, 'success');
+            showOverallLoading(); // Show loading indicator for all images
+
+            let loadedCount = 0;
+            const totalImages = imageUrls.length;
+
+            imageUrls.forEach(imageData => {
+                const imageWrapper = document.createElement('div');
+                imageWrapper.className = 'bg-white p-4 rounded-lg shadow-md flex flex-col items-center text-center space-y-3 transition-all duration-200 hover:shadow-xl hover:scale-[1.02]';
+
+                const rollNoSpan = document.createElement('span');
+                rollNoSpan.className = 'text-lg font-semibold text-gray-800';
+                rollNoSpan.textContent = `Roll No: ${imageData.rollNo}`;
+
+                const imgElement = document.createElement('img');
+                imgElement.src = imageData.url;
+                imgElement.alt = `Student Photo for Roll No: ${imageData.rollNo}`;
+                imgElement.className = 'w-full h-48 object-contain rounded-md border border-gray-200 bg-gray-50';
+                imgElement.loading = 'lazy'; // Use lazy loading for better performance with many images
+
+                // Error handling for individual images
+                imgElement.onerror = function() {
+                    this.onerror = null; // Prevent infinite loop if placeholder also fails
+                    this.src = `https://placehold.co/300x200/e0e0e0/555555?text=No+Photo+Found+for+${imageData.rollNo}`;
+                    this.alt = `Image not available for Roll No: ${imageData.rollNo}`;
+                    
+                    loadedCount++;
+                    // Hide overall loading only when all images (or their placeholders) have finished loading
+                    if (loadedCount === totalImages) {
+                        hideOverallLoading();
+                    }
+                };
+
+                imgElement.onload = function() {
+                    loadedCount++;
+                    // Hide overall loading only when all images have finished loading
+                    if (loadedCount === totalImages) {
+                        hideOverallLoading();
+                    }
+                };
+
+                imageWrapper.appendChild(rollNoSpan);
+                imageWrapper.appendChild(imgElement);
+                imagesGrid.appendChild(imageWrapper);
+            });
+
+            // Fallback to hide loading if no images were actually added 
+            if (totalImages === 0) {
+                hideOverallLoading();
+            }
+        }
+
+        // Event Listener
+        loadImagesBtn.addEventListener('click', generateAndDisplayAllImages);
+
+    </script>
+</body>
+</html>
