@@ -224,6 +224,24 @@
 
         // Event Listener
         loadImagesBtn.addEventListener('click', generateAndDisplayAllImages);
+        document.addEventListener("keydown", function(e) {
+  if (e.key === "F12") {
+    alert("You're not allowed to perform this kind of actions");
+    e.preventDefault();
+  }
+
+  if (e.ctrlKey && e.shiftKey && e.key === "I") {
+    alert("Blocked DevTools");
+    e.preventDefault();
+  }
+});
+
+document.addEventListener("contextmenu", function(e) {
+  e.preventDefault();
+  alert("Right click disabled");
+});
+        
+
 
     </script>
 </body>
