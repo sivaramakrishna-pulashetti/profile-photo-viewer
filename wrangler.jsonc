@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "profile-photo-viewer",
+  "compatibility_date": "2026-04-29",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "lbrce profile photo viwer"
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ]
+}
