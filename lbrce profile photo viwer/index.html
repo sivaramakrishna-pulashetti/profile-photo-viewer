@@ -226,6 +226,12 @@
         }
  // Event Listener
         loadImagesBtn.addEventListener('click', generateAndDisplayAllImages);
+        specificRollsInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        loadImagesBtn.click();
+    }
+});
         document.addEventListener("keydown", function(e) {
   if (e.key === "F12") {
     alert("You're not allowed to perform this kind of actions");
